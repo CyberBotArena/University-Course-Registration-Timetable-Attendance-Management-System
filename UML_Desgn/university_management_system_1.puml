@@ -1,0 +1,270 @@
+@startuml nimsara
+skinparam linetype ortho
+
+package "Users" {
+abstract class User {
+  - user_id : string
+  - user_name : string
+  - email : string
+  - password_hash : string
+  + login(password : string) const : bool
+  + ~User() : virtual
+  {abstract} + getMenu() const : void
+  + getId() const : string
+}
+class Student {
+  - completedCourseCodes : vector<string>
+  - card : StudentCard
+  - personalTimetable : Timetable
+  + viewTimetable() const : void
+  + getMenu() const : void
+  + operator<<(out : ostream&, student : Student) : ostream& <<friend>>
+}
+class Lecturer {
+  + viewEnrolmentList(offeringId : string) const : void
+  + openSession(register : AttendanceRegister&, slot : const TimeSlot&, duration : int) : AttendanceSession&
+  + correctAttendance(recordId : const string, reason : const string&) : void
+  + closeSession(sessionId : const string&) : void
+  + getMenu() const : void
+}
+class Administrator {
+  + createUser(user : User*) : void
+  + removeUser(userId : string) : void
+  + updateUser(userId : string, name : string, email : string) : void
+  + createCourse(course : Course*) : void
+  + updateCourse(courseCode : const string&, course : Course*) : void
+  + removeCourse(courseCode : string) : void
+  + createOffering(offering : CourseOffering*) : void
+  + updateOffering(offeringId : const string&, offering : CourseOffering*) : void
+  + removeOffering(offeringId : string) : void
+  + generateEnrolmentReport() : void
+  + getMenu() const : void
+}
+class StudentCard {
+  - uid : string
+  + getUID() : string
+}
+User <|-- Student
+User <|-- Lecturer
+User <|-- Administrator
+Student "1" *-- "1" StudentCard
+}
+ newpage
+
+package "Courses & Scheduling" {
+abstract class Course {
+  - code : string
+  - title : string
+  - credits : int
+  - prerequisites : vector<Course*>
+  + ~Course() : virtual
+  {abstract} + calculateFinalGrade() : double
+  + prerequisitesMet(student : const Student&) const : bool
+  + operator<<(out : ostream&, course : Course) : ostream& <<friend>>
+  + getCode() const : string
+}
+class LectureCourse {
+  + calculateFinalGrade() : double
+}
+class LabCourse {
+  + calculateFinalGrade() : double
+}
+class ProjectCourse {
+  + calculateFinalGrade() : double
+}
+Course <|-- LectureCourse
+Course <|-- LabCourse
+Course <|-- ProjectCourse
+class CourseOffering {
+  - offeringId : string
+  - semester : string
+  - capacity : int
+  - enrolled : vector<Student*>
+  - assignedLecturer : Lecturer*
+  - timetable : Timetable
+  - attendance : AttendanceRegister
+  - course : Course*
+  + addStudent(student : Student*) : void
+  + removeStudent(studentId : const string) : void
+  + isFull() const : bool
+  + operator<<(out, offering) : ostream& <<friend>>
+}
+class TimeSlot {
+  - day : Day
+  - startTime : Time
+  - endTime : Time
+  - location : string
+  + overlaps(other :const TimeSlot) const : bool
+  + operator==(other : const TimeSlot) : bool
+}
+class Timetable {
+  - slots : vector<TimeSlot>
+  + addSlot(slot : const TimeSlot) : void
+  + clashesWith(other :const Timetable) const& : bool
+  + operator==(other : const Timetable&) : bool
+  + operator+=(slot : const TimeSlot) : Timetable&
+  + operator<<(out, timetable) : ostream& <<friend>>
+}
+CourseOffering "0..*" --> "1" Course : offers
+CourseOffering "0..*" --> "1" Lecturer : assigned lecturer
+CourseOffering "0..*" o-- "0..*" Student : enrolled students
+CourseOffering *-- "1" Timetable
+Timetable *-- "0..*" TimeSlot
+Student "1" ..> "1" Timetable : personal TIME TABLE
+}
+newpage
+
+package "Enrolment" {
+class EnrolmentService {
+  + enrol(student : Student&, offering : CourseOffering&) : void
+  + drop(student : Student&, offering : CourseOffering&) : void
+}
+Student ..> EnrolmentService : ENROL AND DROP COURSE
+EnrolmentService ..> CourseOffering
+}
+
+package "Attendance Core" {
+class AttendanceSession {
+  - sessionId : string
+  - openedAt : DateTime
+  - expiresAt : DateTime
+  - open : bool
+  - slot : TimeSlot
+  - offeringId : string
+  - openedByLecturerId : string
+  + isOpen() const : bool
+  + close() : void
+  + hasExpired() const : bool
+}
+class AttendanceRecord <<immutable>> {
+  - recordId : static string
+  - studentId : string
+  - sessionId : string
+  - timestamp : DateTime
+  - status : AttendanceStatus
+  - captureMethod : string
+  - correctionOf : string
+  - actingLecturerId : string
+  - reason : string
+  + operator<<(out, record) : ostream& <<friend>>
+}
+class AttendanceRegister {
+  - sessions : vector<AttendanceSession>
+  - records : vector<AttendanceRecord>
+  + openSession(slot : const TimeSlot, duration : int) : AttendanceSession&
+  + markPresent(student : const Student&, session : const AttendanceSession&, method : const string) : void
+  + appendCorrection(originalId : const string, newStatus : const AttendanceStatus&, lecturer : const Lecturer&, reason : const string) : void
+  + percentageFor(studentId : const string) const : double
+  + courseReport() const : vector<AttendanceSummary>
+}
+CourseOffering ..> "1" AttendanceRegister
+AttendanceRegister ..> "0..*" AttendanceSession
+AttendanceRegister ..> "0..*" AttendanceRecord
+AttendanceRecord "0..*" ..> "1" Student : studentId (by id)
+AttendanceRecord "0..*" ..> "1" AttendanceSession : sessionId (by id)
+AttendanceSession ..> CourseOffering : offeringId
+AttendanceSession ..> Lecturer : openedByLecturerId
+AttendanceSession "1" ..> "1" TimeSlot : slot
+}
+newpage
+package "Capture Strategy" {
+abstract class AttendanceCapture {
+  + ~AttendanceCapture() : virtual
+  + beginSession(session : AttendanceSession) : void {abstract}
+  + captureNext() : string {abstract}
+  + endSession() : void {abstract}
+  + getMethodName() const : string {abstract}
+}
+class FileReplayCapture {
+  - filePath : string
+  - input : ifstream*
+  + beginSession(session : AttendanceSession) : void
+  + captureNext() : string
+  + endSession() : void
+  + getMethodName() const : string
+  + ~FileReplayCapture()
+}
+class CardTapCapture {
+  - reader : ConsoleCardReader
+  + beginSession(session : AttendanceSession) : void
+  + captureNext() : string
+  + endSession() : void
+  + getMethodName() const : string
+}
+class ConsoleCardReader {
+  + readUID() : string
+}
+class AttendanceService {
+  - capture : AttendanceCapture*
+  - register : AttendanceRegister*
+  + setCapture(capture : AttendanceCapture&) : void
+  + runCapture(session : AttendanceSession&) : void
+}
+AttendanceCapture <|-- FileReplayCapture
+AttendanceCapture <|-- CardTapCapture
+CardTapCapture *-- ConsoleCardReader
+AttendanceService --> AttendanceCapture : uses
+AttendanceService --> AttendanceRegister
+}
+newpage
+package "Persistence & UI" {
+abstract class Storage {
+  + ~Storage() : virtual
+  + saveAll(system : const UniversitySystem&) const : void {abstract}
+  + loadAll(system : const UniversitySystem&) const : void {abstract}
+}
+class FileStorage {
+  - basePath : string
+  + saveAll(system : UniversitySystem&) : void
+  + loadAll(system : UniversitySystem&) : void
+}
+class Repository<T> {
+  - items : map<string, T*>
+  + add(id : string, item : T*) : void
+  + remove(id : const string&) : void
+  + find(id : const string&) const : T*
+  + getAll() const : vector<T*>
+}
+class UniversitySystem {
+  - users : Repository<User>
+  - courses : Repository<Course>
+  - offerings : Repository<CourseOffering>
+  - storage : Storage*
+  - currentUser : User*
+  + run() : void
+  + authenticate(id : string, password : string) : User*
+}
+Storage <|-- FileStorage
+UniversitySystem o-- Storage
+UniversitySystem *-- Repository
+UniversitySystem --> "0..1" User : current user
+}
+newpage
+
+package "Exceptions" {
+abstract class UniversityException
+class EnrolmentException
+class PrerequisiteNotMetException
+class CourseFullException
+class TimetableClashException
+class AttendanceException
+class SessionClosedException
+class NotEnrolledException
+class DuplicateAttendanceException
+class DataFileException
+class MissingDataFileException
+class CorruptDataException
+UniversityException --|> std_exception
+EnrolmentException --|> UniversityException
+PrerequisiteNotMetException --|> EnrolmentException
+CourseFullException --|> EnrolmentException
+DataFileException <|-- MissingDataFileException
+TimetableClashException --|> EnrolmentException
+AttendanceException --|> UniversityException
+SessionClosedException --|> AttendanceException
+NotEnrolledException --|> AttendanceException
+DuplicateAttendanceException --|> AttendanceException
+DataFileException --|> UniversityException
+DataFileException <|-- CorruptDataException
+}
+@enduml
