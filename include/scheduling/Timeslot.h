@@ -1,72 +1,90 @@
-#include <string>
+#ifndef TIME_SLOT_H
+#define TIME_SLOT_H
 
-enum Day {
+#include <string>
+#include <stdexcept>
+using namespace std;
+
+enum class Day {
     Monday,
-    Tueseday,
+    Tuesday,
     Wednesday,
     Thursday,
-    Friday
+    Friday,
+    Saturday,
+    Sunday
 };
-class Timeslot
-{
+
+class TimeSlot {
 private:
-Day day;
-int statrt_minutes;
-int end_minutes;
-std::string location;
-    
+    Day day;
+    int startMinutes;
+    int endMinutes;
+    string location;
+
 public:
-    Timeslot(Day day,
-    int start_minute,
-    int end_minutes,
-    std::string location);
-    ~Timeslot();
+    // Constructor
+    TimeSlot(
+        Day day,
+        int startMinutes,
+        int endMinutes,
+        const string& location
+    )
+        : day(day),
+          startMinutes(startMinutes),
+          endMinutes(endMinutes),
+          location(location)
+    {
+        if (startMinutes < 0 || endMinutes > 24 * 60) {
+            throw invalid_argument(
+                "Time must be between 00:00 and 24:00."
+            );
+        }
 
-    Day getDay() const;
-    int getStartMinutes() const;
-    int getEndMinutes() const;
-    const std::string getLocation() const;
+        if (startMinutes >= endMinutes) {
+            throw invalid_argument(
+                "Start time must be earlier than end time."
+            );
+        }
 
+        if (location.empty()) {
+            throw invalid_argument(
+                "Location cannot be empty."
+            );
+        }
+    }
+
+    Day getDay() const {
+        return day;
+    }
+
+    int getStartMinutes() const {
+        return startMinutes;
+    }
+
+    int getEndMinutes() const {
+        return endMinutes;
+    }
+
+    const string& getLocation() const {
+        return location;
+    }
+
+    bool overlaps(const TimeSlot& other) const {
+        if (day != other.day) {
+            return false;
+        }
+
+        return startMinutes < other.endMinutes &&
+               other.startMinutes < endMinutes;
+    }
+
+    bool operator==(const TimeSlot& other) const {
+        return day == other.day &&
+               startMinutes == other.startMinutes &&
+               endMinutes == other.endMinutes &&
+               location == other.location;
+    }
 };
 
-Timeslot::Timeslot(Day day,
-    int startMinutes,
-    int endMinutes,
-    const std::string& location)
-: day(day),
-startMinutes(startMinutes),
-endMinutes(endMinutes),
-location(location) {
-if (startMinutes < 0 || endMinutes > 24 * 60) {
-throw std::invalid_argument(
-"Time must be between 00:00 and 24:00.");
-}
-
-if (startMinutes >= endMinutes) {
-throw std::invalid_argument(
-"The start time must be earlier than the end time.");
-}
-
-if (location.empty()) {
-throw std::invalid_argument("Location cannot be empty.");
-}
-}
-Day TimeSlot::getDay() const {
-    return day;
-}
-
-int TimeSlot::getStartMinutes() const {
-    return startMinutes;
-}
-
-int TimeSlot::getEndMinutes() const {
-    return endMinutes;
-}
-
-const std::string& TimeSlot::getLocation() const {
-    return location;
-}
-
-Timeslot::~Timeslot()
-{
-}
+#endif
