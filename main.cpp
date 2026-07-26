@@ -1,26 +1,41 @@
 #include <iostream>
-#include "include/scheduling/TimeSlot.h"
+#include "include/attendance/AttendanceSession.h"
 
 int main() {
     try {
-        TimeSlot lecture(
+        TimeSlot lectureSlot(
             Day::Monday,
             9 * 60,
             11 * 60,
             "Room A"
         );
 
-        std::cout << "Start: "
-                  << lecture.getStartMinutes() << '\n';
+        AttendanceSession session(
+            "SESSION001",
+            "OFFERING001",
+            "LECTURER001",
+            lectureSlot,
+            60
+        );
 
-        std::cout << "End: "
-                  << lecture.getEndMinutes() << '\n';
+        std::cout << "Session ID: "
+                  << session.getId() << '\n';
 
-        std::cout << "Location: "
-                  << lecture.getLocation() << '\n';
+        std::cout << "Offering ID: "
+                  << session.getOfferingId() << '\n';
+
+        std::cout << "Session open: "
+                  << std::boolalpha
+                  << session.isOpen() << '\n';
+
+        session.close();
+
+        std::cout << "Session open after closing: "
+                  << session.isOpen() << '\n';
     }
-    catch (const invalid_argument& error) {
-        std::cout << "Error: " << error.what() << '\n';
+    catch (const std::invalid_argument& error) {
+        std::cout << "Error: "
+                  << error.what() << '\n';
     }
 
     return 0;

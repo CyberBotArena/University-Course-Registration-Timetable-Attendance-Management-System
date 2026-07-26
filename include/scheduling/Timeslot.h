@@ -5,7 +5,8 @@
 #include <stdexcept>
 using namespace std;
 
-enum class Day {
+enum class Day 
+{
     Monday,
     Tuesday,
     Wednesday,
@@ -35,19 +36,22 @@ public:
           endMinutes(endMinutes),
           location(location)
     {
-        if (startMinutes < 0 || endMinutes > 24 * 60) {
+        if (startMinutes < 0 || endMinutes > 24 * 60) 
+        {
             throw invalid_argument(
                 "Time must be between 00:00 and 24:00."
             );
         }
 
-        if (startMinutes >= endMinutes) {
+        if (startMinutes >= endMinutes) 
+        {
             throw invalid_argument(
                 "Start time must be earlier than end time."
             );
         }
 
-        if (location.empty()) {
+        if (location.empty()) 
+        {
             throw invalid_argument(
                 "Location cannot be empty."
             );
@@ -71,12 +75,15 @@ public:
     }
 
     bool overlaps(const TimeSlot& other) const {
-        if (day != other.day) {
+        if (day != other.day) 
+        {
             return false;
         }
-
+        else
+        {
         return startMinutes < other.endMinutes &&
                other.startMinutes < endMinutes;
+        }
     }
 
     bool operator==(const TimeSlot& other) const {
