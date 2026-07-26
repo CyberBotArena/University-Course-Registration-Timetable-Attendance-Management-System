@@ -1,9 +1,9 @@
 #include <iostream>
-#include "include/attendance/AttendanceSession.h"
+#include "include/attendance/AttendanceRegister.h"
 
 int main() {
     try {
-        TimeSlot lectureSlot(
+        TimeSlot slot(
             Day::Monday,
             9 * 60,
             11 * 60,
@@ -14,28 +14,43 @@ int main() {
             "SESSION001",
             "OFFERING001",
             "LECTURER001",
-            lectureSlot,
+            slot,
             60
         );
 
-        std::cout << "Session ID: "
-                  << session.getId() << '\n';
+        AttendanceRegister attendanceRegister;
 
-        std::cout << "Offering ID: "
-                  << session.getOfferingId() << '\n';
+        attendanceRegister.addSession(session);
 
-        std::cout << "Session open: "
-                  << std::boolalpha
-                  << session.isOpen() << '\n';
+        attendanceRegister.markPresent(
+            "RECORD001",
+            "STUDENT001",
+            "SESSION001",
+            "Card Tap"
+        );
 
-        session.close();
+        std::cout << "Number of records: "
+                  << attendanceRegister.getRecords().size()
+                  << '\n';
 
-        std::cout << "Session open after closing: "
-                  << session.isOpen() << '\n';
+        const AttendanceRecord* savedRecord =
+            attendanceRegister.findRecord("RECORD001");
+
+        if (savedRecord != nullptr) {
+            std::cout << "Student ID: "
+                      << savedRecord->getStudentID()
+                      << '\n';
+
+            if (savedRecord->getStatus() ==
+                AttendanceStatus::Present) {
+                std::cout << "Status: Present\n";
+            }
+        }
     }
-    catch (const std::invalid_argument& error) {
+    catch (const std::exception& error) {
         std::cout << "Error: "
-                  << error.what() << '\n';
+                  << error.what()
+                  << '\n';
     }
 
     return 0;
