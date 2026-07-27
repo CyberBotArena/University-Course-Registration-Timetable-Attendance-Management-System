@@ -33,7 +33,7 @@ class AttendanceRecord {
     AttendanceRecord(
         const string& record_ID,
         const string& student_ID,
-        const string& sessoion_ID,
+        const string& session_ID,
         AttendanceStatus status,
         const string& capture_method,
         const string correction_of = " ",
@@ -85,7 +85,7 @@ class AttendanceRecord {
         return student_ID;
     }
 
-    const string& getSessionID(){
+    const string& getSessionID() const {
         return session_ID;
     }
     AttendanceStatus getStatus() const {

@@ -144,6 +144,8 @@ void appendCorrection(
         );
     }
 
+//calculate one student's attendance percentage for one course offering
+
 double percentageFor(const string& student_ID, const string& offering_ID) const{
     int total_sessions =0;
     int attended_sessions =0;
@@ -155,7 +157,7 @@ double percentageFor(const string& student_ID, const string& offering_ID) const{
             total_sessions++;
              // Search backwards to find the latest record or correction
              
-             for (int i = (int)records.size() - 1; i >= 0;i--) 
+             for (int i = static_cast<int>(records.size()) - 1; i >= 0;i--) 
              {
                 const AttendanceRecord& record = records[i];
                 if (record.getStudentID() == student_ID && record.getSessionID() == session.getId()) 
@@ -176,10 +178,9 @@ double percentageFor(const string& student_ID, const string& offering_ID) const{
         return 0.0;
     }
 
-            
     }
 
-    return ((double)attended_sessions/total_sessions)*100.0;
+    return (static_cast<double>(attended_sessions)/total_sessions)*100.0;
 
     }
 
